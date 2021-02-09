@@ -22,7 +22,6 @@ module.exports = (sequelize, DataTypes) => {
     Address: DataTypes.STRING,
     AccountNumber: {
       allowNull: false,
-      autoIncrement: true,
       unique: true,
       type: DataTypes.INTEGER
     },
