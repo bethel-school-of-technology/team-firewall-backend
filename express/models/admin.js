@@ -21,6 +21,10 @@ module.exports = (sequelize, DataTypes) => {
       unique: true,
       type: DataTypes.STRING
     },
+    Email: {
+      unique: true,
+      type: DataTypes.STRING
+    },
     AdminStatus: {
       DefaultValue: true,
       type: DataTypes.BOOLEAN

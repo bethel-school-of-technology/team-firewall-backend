@@ -26,6 +26,10 @@ module.exports = (sequelize, DataTypes) => {
     BankId: {
       foreignKey: true,
       type: DataTypes.INTEGER
+    },
+    AdminStatus: {
+      DefaultValue: false,
+      type: DataTypes.BOOLEAN
     }
   }, {
     sequelize,
