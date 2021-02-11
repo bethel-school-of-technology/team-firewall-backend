@@ -23,11 +23,6 @@
                     "field": "Password",
                     "seqType": "Sequelize.STRING"
                 },
-                "Email": {
-                    "unique": true,
-                    "field": "Email",
-                    "seqType": "Sequelize.STRING"
-                },
                 "AdminStatus": {
                     "DefaultValue": true,
                     "field": "AdminStatus",
@@ -179,5 +174,5 @@
             "indexes": []
         }
     },
-    "revision": 3
+    "revision": 2
 }
