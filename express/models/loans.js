@@ -32,6 +32,10 @@ module.exports = (sequelize, DataTypes) => {
     ForSale: {
       DefaultValue: false,
       type: DataTypes.BOOLEAN
+    }, 
+    Deleted: {
+      DefaultValue: false,
+      type: DataTypes.BOOLEAN
     }
   }, {
     sequelize,

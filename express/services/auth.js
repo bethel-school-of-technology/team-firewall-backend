@@ -17,7 +17,7 @@ var authService = {
         const token2 = jwt.sign({
             Email: admin.Email,
             AdminId: admin.AdminId
-        }, 'secretkey',
+        }, 'NewUniqueKey',
         {
             expiresIn: '1h'
         });
@@ -34,7 +34,7 @@ var authService = {
     },
     verifyUser2: function(token2){
         try {
-            let decoded = jwt.verify(token2, 'secretkey');
+            let decoded = jwt.verify(token2, 'NewUniqueKey');
             return models.admin.findByPk(decoded.AdminId);
         } catch(err) {
             console.log(err);

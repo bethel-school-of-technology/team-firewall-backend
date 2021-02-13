@@ -165,6 +165,11 @@
                     "field": "ForSale",
                     "seqType": "Sequelize.BOOLEAN"
                 },
+                "Deleted": {
+                    "DefaultValue": false,
+                    "field": "Deleted",
+                    "seqType": "Sequelize.BOOLEAN"
+                },
                 "createdAt": {
                     "allowNull": false,
                     "field": "createdAt",
@@ -179,5 +184,5 @@
             "indexes": []
         }
     },
-    "revision": 3
+    "revision": 4
 }

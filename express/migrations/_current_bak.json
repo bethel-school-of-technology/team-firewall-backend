@@ -23,6 +23,11 @@
                     "field": "Password",
                     "seqType": "Sequelize.STRING"
                 },
+                "Email": {
+                    "unique": true,
+                    "field": "Email",
+                    "seqType": "Sequelize.STRING"
+                },
                 "AdminStatus": {
                     "DefaultValue": true,
                     "field": "AdminStatus",
@@ -160,6 +165,11 @@
                     "field": "ForSale",
                     "seqType": "Sequelize.BOOLEAN"
                 },
+                "Deleted": {
+                    "DefaultValue": false,
+                    "field": "Deleted",
+                    "seqType": "Sequelize.BOOLEAN"
+                },
                 "createdAt": {
                     "allowNull": false,
                     "field": "createdAt",
@@ -174,5 +184,5 @@
             "indexes": []
         }
     },
-    "revision": 2
+    "revision": 4
 }
