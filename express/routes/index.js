@@ -1,3 +1,5 @@
+const { reduce } = require('bluebird');
+const { error } = require('console');
 var express = require('express');
 var router = express.Router();
 var mysql = require('mysql2');
@@ -77,7 +79,8 @@ router.post('/login/banker', async function (req, res, next) {
         res.send("Wrong Password")
       } else {
         let token = authService.assignToken(banker);
-        res.json({ message: "login Successful", status: 200, token });
+          res.cookie('jwt', token);
+          res.json({ message: "login Successful", status: 200, token });
 
       }
     }
@@ -115,7 +118,7 @@ router.post('/login/admin', function (req, res, next) {
   }
 });
 
-router.get('/bankerlist', function (req, res, next) {
+router.get('/admin', function (req, res, next) {
   let token = req.cookies.jwt;
   authService.verifyUser2(token).then(admin => {
     if (admin) {
@@ -159,9 +162,41 @@ router.get('/loans/:id')
 
 router.get('/profile/:id')
 
-router.post('/addloan')
+router.post('/addloan/:id', function (req, res, next) {
+  let token = req.cookies.jwt;
+  if (token) {
+    authService.verifyUser(token)
+      .then(banker => {
+        if (banker) {
+          bankFound = parseInt(req.params.id);
+          models.loans.findOrCreate({
+            where: { AccountNumber: req.body.accountNumber },
+            defaults: {
+              FirstName: req.body.firstName,
+              LastName: req.body.lastName,
+              LoanAmmount: req.body.amount,
+              Address: req.body.address,
+              BankId: bankFound
+            }
+          }).spread(function (result, created) {
+            console.log(result);
+            if (created) {
+              res.send('Loan Created');
+            } else {
+              res.send('Loan alreadt exists')
+            }
+          });
+        } else {
+          res.send('Please log in.')
+        }
+      }
+      );
+  } else {
+    res.send(error);
+  }
+});
 
-router.put('/deleteloan')
+router.post('/deleteloan')
 
 router.get('/homepage', function (req, res, next) {
   let token = req.cookies.jwt;
