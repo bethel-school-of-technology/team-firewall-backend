@@ -1,4 +1,4 @@
-const { reduce } = require('bluebird');
+var Bankers = require('../models/bankers');
 const { error } = require('console');
 var express = require('express');
 var router = express.Router();
@@ -9,7 +9,8 @@ var passwordService1 = require("../services/password");
 var passwordService2 = require("../services/password");
 
 router.post('/signup/banker', function (req, res, next) {
-  models.banks.findOne({
+  try{ 
+    models.banks.findOne({
     where: { Name: req.body.bankName }
   }).then(bankFound => {
     if (bankFound) {
@@ -34,6 +35,11 @@ router.post('/signup/banker', function (req, res, next) {
       );
     }
   })
+}   
+catch(err){
+  console.log(err);
+  res.send("error");
+}
 });
 
 router.get('/findbanks', function (req, res, next) {
@@ -156,9 +162,38 @@ router.post('/addbank', function (req, res, next) {
 
 });
 
-router.get('/loans')
+router.get('/loans', function(req, res, next){
+  let token = req.cookies.jwt;
+  models.bankers
+  authService.verifyUser(token).then(banker =>{
+    if(banker){
+      models.loans.findAll({
+        where: { Deleted: false}
+      }).then(loansFound => {
+        res.json(loansFound)
+      })
+    }else {
+      res.send("Need to log in")
+    }
+  });
+});
 
-router.get('/loans/:id')
+router.get('/loans/:id', function(req, res, next){
+  let token = req.cookies.jwt;
+  models.bankers
+  authService.verifyUser(token).then(banker => {
+    if(banker){
+      let loanId = parseInt(req.params.id);
+      models.loans.findOne({
+        where :{ LoanId: loanId}
+      }).then(loanFound => {
+        res.json(loanFound)
+      });
+    } else{
+      res.send('Please login.')
+    }
+  });
+});
 
 router.get('/profile/:id')
 
@@ -183,7 +218,7 @@ router.post('/addloan/:id', function (req, res, next) {
             if (created) {
               res.send('Loan Created');
             } else {
-              res.send('Loan alreadt exists')
+              res.send('Loan already exists')
             }
           });
         } else {
@@ -196,7 +231,45 @@ router.post('/addloan/:id', function (req, res, next) {
   }
 });
 
-router.post('/deleteloan')
+router.post('/deleteloan/:id', function(req, res, next){
+  let token = req.cookies.jwt;
+  models.bankers
+  authService.verifyUser(token).then(banker => {
+    if(banker) {
+      let loanId = parseInt(req.params.id);
+      models.loans.update({Deleted: true}, {
+        where: {LoanId: loanId}
+      }).then(result => {
+        res.send(result)
+      }).catch(err =>{
+        res.status(err);
+      })
+    } else {
+      res.send("Need to be logged in")
+    }
+  });
+});
+
+router.post('/sellloan/:id', function(req, res, next){
+  let token = req.cookies.jwt;
+  models.bankers
+  authService.verifyUser(token).then(banker => {
+    if(banker) {
+      let loanId = parseInt(req.params.id);
+      models.loans.update({ForSale: true}, {
+        where: {LoanId: loanId,
+        Deleted: false}
+      }).then(result => {
+        res.send(result)
+      }).catch(err =>{
+        res.status(err);
+      })
+    } else {
+      res.send("Need to be logged in")
+    }
+  });
+});
+
 
 router.get('/homepage', function (req, res, next) {
   let token = req.cookies.jwt;
