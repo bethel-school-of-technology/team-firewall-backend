@@ -1,8 +1,6 @@
-var Bankers = require('../models/bankers');
 const { error } = require('console');
 var express = require('express');
 var router = express.Router();
-var mysql = require('mysql2');
 const models = require('../models');
 var authService = require("../services/auth");
 var passwordService1 = require("../services/password");
@@ -195,7 +193,41 @@ router.get('/loans/:id', function(req, res, next){
   });
 });
 
-router.get('/profile/:id')
+router.get('/portfolio/:id', function(req, res, next){
+  let token = req.cookies.jwt;
+  models.bankers
+  authService.verifyUser(token).then(banker =>{
+    if(banker){
+      let bankId = parseInt(req.params.id)
+      models.banks.findOne({ where: {
+        BankId: bankId
+      }}).then(bankFound => {
+        if(bankFound){
+          models.loans.findAll({
+            where: {
+              BankId: bankFound.BankId,
+              Deleted: false
+            }
+          }).then(loansFound => {
+            if(loansFound){
+              let responsePortfolio = {
+                BankName: bankFound.Name,
+                Loans: loansFound
+              }
+              res.json(responsePortfolio);
+            } else {
+              res.send("No loans Found");
+            }
+          })
+        } else {
+          res.send("No Bank Found");
+        }
+      })
+    } else{
+      res.send("Please Log In");
+    }
+  });
+});
 
 router.post('/addloan/:id', function (req, res, next) {
   let token = req.cookies.jwt;
