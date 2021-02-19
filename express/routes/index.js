@@ -325,5 +325,24 @@ router.get('/homepage', function (req, res, next) {
   });
 });
 
+router.post('/buyloan/:id', function(req, res, next) {
+  let token = req.cookies.jwt;
+  models.bankers
+  authService.verifyUser(token).then(banker => {
+    if(banker){
+      let bankId = banker.BankId;
+      let loanId = parseInt(req.params.id);
+      models.loans.update({ BankId: bankId}, {
+        where: {LoanId: loanId},
+      }).then(results => {
+        console.log(results);
+        res.send('Purchase Successfull');
+      });
+    } else {
+      res.send('Please Log In');
+    }
+  });
+});
+
 
 module.exports = router;
