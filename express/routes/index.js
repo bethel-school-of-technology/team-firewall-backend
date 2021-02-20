@@ -22,12 +22,18 @@ router.post('/signup/banker', function (req, res, next) {
           Password: passwordService1.hashPassword(req.body.password),
           BankId: bankFound.BankId
         }
-      }).spread(function (result, created) {
+      }).spread(function (result, created, err) {
         //console.log(result);
         if (created) {
-          res.send('User created')
+          res.json({
+            message: "Banker Created successfully",
+            status: 200
+          })
         } else {
-          res.send('User already exists')
+          res.json({
+            message: "User already exists",
+            status: 403
+          })
         }
       }
       );
@@ -43,6 +49,8 @@ catch(err){
 router.get('/findbanks', function (req, res, next) {
   models.banks.findAll({
     Name: req.body.bankName
+  }).then(result => {
+    res.json(result)
   })
 });
 
@@ -59,9 +67,15 @@ router.post('/signup/admin', function (req, res, next) {
   }).spread(function (result, created) {
     //console.log(result);
     if (created) {
-      res.send('Admin created')
+      res.json({
+        message: "Admin Created successfully",
+        status: 200
+      })
     } else {
-      res.send('Admin already exists')
+      res.json({
+        message: "Admin already exists",
+        status: 403
+      })
     }
   });
 });
