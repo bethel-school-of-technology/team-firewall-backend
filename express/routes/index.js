@@ -89,12 +89,18 @@ router.post('/login/banker', async function (req, res, next) {
       }
     });
     if (!banker) {
-      console.log('User not found');
+      res.json({
+        message: "User Not Found",
+        status: 403
+      })
     } else {
       let passwordMatch = passwordService1.comparePasswords(req.body.password, banker.Password);
       if (!passwordMatch) {
         console.log("Wrong Password");
-        res.send("Wrong Password")
+        res.json({
+          message: "Wrong Password",
+          status: 403
+        })
       } else {
         let token = authService.assignToken(banker);
           res.cookie('jwt', token);
@@ -117,12 +123,17 @@ router.post('/login/admin', function (req, res, next) {
       }
     }).then(admin => {
       if (!admin) {
-        console.log('User not found');
+        res.json({
+          message: "Admin Not Found",
+          status: 403
+        });
       } else {
         let passwordMatch = passwordService2.comparePasswords(req.body.password, admin.Password);
         if (!passwordMatch) {
           console.log("Wrong Password");
-          res.send("Wrong Password")
+          res.json({
+            message: "Wrong Password"
+          });
         } else {
           let token = authService.assignToken2(admin);
           res.cookie('jwt', token);
@@ -137,7 +148,9 @@ router.post('/login/admin', function (req, res, next) {
 });
 
 router.get('/admin', function (req, res, next) {
-  let token = req.cookies.jwt;
+  let token = req.headers.authorization;
+  console.log("this admin route has been called");
+  console.log(req.headers)
   authService.verifyUser2(token).then(admin => {
     if (admin) {
       models.bankers.findAll({
@@ -158,14 +171,20 @@ router.post('/addbank', function (req, res, next) {
   try {
     models.banks.findOrCreate({
       where: {
-        Name: req.body.bankName
+        Name: req.body.name
       }
     }).spread(function (result, created) {
       console.log(result);
       if (created) {
-        res.send('Bank Created')
+        res.json({
+          message: "Bank Successfully Created",
+          status: 200
+        })
       } else {
-        res.send('Bank already Exists')
+        res.json({
+          message: "Bank Already Exists",
+          status: 403
+        });
       }
     });
   } catch (err) {
