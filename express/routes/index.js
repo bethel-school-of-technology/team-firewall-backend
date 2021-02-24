@@ -7,43 +7,43 @@ var passwordService1 = require("../services/password");
 var passwordService2 = require("../services/password");
 
 router.post('/signup/banker', function (req, res, next) {
-  try{ 
+  try {
     models.banks.findOne({
-    where: { Name: req.body.bankName }
-  }).then(bankFound => {
-    if (bankFound) {
-      models.bankers.findOrCreate({
-        where: {
-          Email: req.body.email
-        },
-        defaults: {
-          FirstName: req.body.firstName,
-          LastName: req.body.lastName,
-          Password: passwordService1.hashPassword(req.body.password),
-          BankId: bankFound.BankId
+      where: { Name: req.body.bankName }
+    }).then(bankFound => {
+      if (bankFound) {
+        models.bankers.findOrCreate({
+          where: {
+            Email: req.body.email
+          },
+          defaults: {
+            FirstName: req.body.firstName,
+            LastName: req.body.lastName,
+            Password: passwordService1.hashPassword(req.body.password),
+            BankId: bankFound.BankId
+          }
+        }).spread(function (result, created, err) {
+          //console.log(result);
+          if (created) {
+            res.json({
+              message: "Banker Created successfully",
+              status: 200
+            })
+          } else {
+            res.json({
+              message: "User already exists",
+              status: 403
+            })
+          }
         }
-      }).spread(function (result, created, err) {
-        //console.log(result);
-        if (created) {
-          res.json({
-            message: "Banker Created successfully",
-            status: 200
-          })
-        } else {
-          res.json({
-            message: "User already exists",
-            status: 403
-          })
-        }
+        );
       }
-      );
-    }
-  })
-}   
-catch(err){
-  console.log(err);
-  res.send("error");
-}
+    })
+  }
+  catch (err) {
+    console.log(err);
+    res.send("error");
+  }
 });
 
 router.get('/findbanks', function (req, res, next) {
@@ -103,8 +103,8 @@ router.post('/login/banker', async function (req, res, next) {
         })
       } else {
         let token = authService.assignToken(banker);
-          res.cookie('jwt', token);
-          res.json({ message: "login Successful", status: 200, token });
+        res.cookie('jwt', token);
+        res.json({ message: "login Successful", status: 200, token });
 
       }
     }
@@ -114,6 +114,26 @@ router.post('/login/banker', async function (req, res, next) {
   }
 
 });
+
+router.get('/banker', function(req, res, next){
+  let token = req.headers.authorization;
+  models.bankers
+  authService.verifyUser(token).then(banker => {
+    if (banker){
+      models.bankers.findOne({
+        where: {
+          BankerId: banker.BankerId
+        },
+        include: [{
+          attributes: ['Name'],
+          model: models.banks
+        }]
+      }).then(bankerFound => {
+        res.json(bankerFound)
+      })
+    }
+  })
+})
 
 router.post('/login/admin', function (req, res, next) {
   try {
@@ -193,61 +213,116 @@ router.post('/addbank', function (req, res, next) {
 
 });
 
-router.get('/loans', function(req, res, next){
-  let token = req.cookies.jwt;
+router.get('/loans', function (req, res, next) {
+  let token = req.headers.authorization;
   models.bankers
-  authService.verifyUser(token).then(banker =>{
-    if(banker){
-      models.loans.findAll({
-        where: { Deleted: false}
-      }).then(loansFound => {
-        res.json(loansFound)
-      })
-    }else {
+  authService.verifyUser(token).then(banker => {
+    if (banker) {
+        models.loans.findAll({
+          where: {
+            Deleted: false,
+            BankId: banker.BankId
+          }
+        }).then(loansFound => {
+          res.json(loansFound)
+        })
+    } else {
       res.send("Need to log in")
     }
   });
 });
 
-router.get('/loans/:id', function(req, res, next){
-  let token = req.cookies.jwt;
+router.get('/loanstosell', function(req, res, next){
+  let token = req.headers.authorization;
   models.bankers
   authService.verifyUser(token).then(banker => {
-    if(banker){
+    if (banker) {
+      models.loans.findAll({
+        where: {
+          ForSale: false,
+          Deleted: false,
+          BankId: banker.BankId
+        },
+        include: [{
+          attributes: ['Name'],
+          model: models.banks
+        }]
+      }).then(loansFound => {
+        res.json(loansFound)
+      });
+    } else {
+      res.json({
+        message: "No Loans Found",
+        status: 403
+      });
+    }
+  });
+});
+
+router.get('/loansforsale', function (req, res, next){
+  let token = req.headers.authorization;
+  models.bankers
+  authService.verifyUser(token).then(banker => {
+    if (banker) {
+      models.loans.findAll({
+        where: {
+          ForSale: true,
+          Deleted: false,
+          BankId: {$not: banker.BankId}
+        },
+        include: [{
+          attributes: ['Name'],
+          model: models.banks
+        }]
+      }).then(loansFound => {
+        res.json(loansFound)
+      });
+    } else {
+      res.json({
+        message: "No Loans Found",
+        status: 403
+      });
+    }
+  });
+});
+
+router.get('/loan/:id', function (req, res, next) {
+  let token = req.headers.authorization;
+  models.bankers
+  authService.verifyUser(token).then(banker => {
+    if (banker) {
       let loanId = parseInt(req.params.id);
       models.loans.findOne({
-        where :{ LoanId: loanId}
+        where: { LoanId: loanId }
       }).then(loanFound => {
-        res.json(loanFound)
+        res.json({loan: loanFound})
       });
-    } else{
+    } else {
       res.send('Please login.')
     }
   });
 });
 
-router.get('/portfolio/:id', function(req, res, next){
-  let token = req.cookies.jwt;
+router.get('/portfolio/:id', function (req, res, next) {
+  let token = req.headers.authorization;
   models.bankers
-  authService.verifyUser(token).then(banker =>{
-    if(banker){
+  authService.verifyUser(token).then(banker => {
+    if (banker) {
       let bankId = parseInt(req.params.id)
-      models.banks.findOne({ where: {
-        BankId: bankId
-      }}).then(bankFound => {
-        if(bankFound){
+      models.banks.findOne({
+        where: {
+          BankId: bankId
+        }
+      }).then(bankFound => {
+        if (bankFound) {
           models.loans.findAll({
             where: {
               BankId: bankFound.BankId,
               Deleted: false
             }
           }).then(loansFound => {
-            if(loansFound){
-              let responsePortfolio = {
-                BankName: bankFound.Name,
-                Loans: loansFound
-              }
-              res.json(responsePortfolio);
+            if (loansFound) {
+              res.json(loansFound);
             } else {
               res.send("No loans Found");
             }
@@ -256,19 +331,54 @@ router.get('/portfolio/:id', function(req, res, next){
           res.send("No Bank Found");
         }
       })
-    } else{
+    } else {
       res.send("Please Log In");
     }
   });
 });
 
-router.post('/addloan/:id', function (req, res, next) {
-  let token = req.cookies.jwt;
+router.get('/employees/:id', function(req, res, next){
+  let token = req.headers.authorization;
+  models.bankers
+  authService.verifyUser(token).then(banker => {
+    if (banker) {
+      let bankId = parseInt(req.params.id)
+      models.banks.findOne({
+        where: {
+          BankId: bankId
+        }
+      }).then(bankFound => {
+        if (bankFound) {
+          models.bankers.findAll({
+            where: {
+              BankId: bankId
+            }
+          }).then(bankersFound => {
+            res.json(bankersFound)
+          });
+        } else {
+          res.json({
+            message: "Bank not found",
+            status: 200
+          });
+        }
+      });
+    } else {
+      res.json({
+        message: "Not logged In",
+        status: 405
+      });
+    }
+  });
+});
+
+router.post('/addloan', function (req, res, next) {
+  let token = req.headers.authorization;
   if (token) {
     authService.verifyUser(token)
       .then(banker => {
         if (banker) {
-          bankFound = parseInt(req.params.id);
+          // bankFound = parseInt(req.params.id);
           models.loans.findOrCreate({
             where: { AccountNumber: req.body.accountNumber },
             defaults: {
@@ -276,14 +386,20 @@ router.post('/addloan/:id', function (req, res, next) {
               LastName: req.body.lastName,
               LoanAmmount: req.body.amount,
               Address: req.body.address,
-              BankId: bankFound
+              BankId: banker.BankId
             }
           }).spread(function (result, created) {
             console.log(result);
             if (created) {
-              res.send('Loan Created');
+              res.json({
+                message: "Loan Added",
+                status: 200
+              })
             } else {
-              res.send('Loan already exists')
+              res.json({
+                message: "Loan Did Not Add",
+                status: 403
+              })
             }
           });
         } else {
@@ -296,17 +412,17 @@ router.post('/addloan/:id', function (req, res, next) {
   }
 });
 
-router.post('/deleteloan/:id', function(req, res, next){
-  let token = req.cookies.jwt;
+router.post('/deleteloan/:id', function (req, res, next) {
+  let token = req.headers.authorization;
   models.bankers
   authService.verifyUser(token).then(banker => {
-    if(banker) {
+    if (banker) {
       let loanId = parseInt(req.params.id);
-      models.loans.update({Deleted: true}, {
-        where: {LoanId: loanId}
+      models.loans.update({ Deleted: true }, {
+        where: { LoanId: loanId }
       }).then(result => {
         res.send(result)
-      }).catch(err =>{
+      }).catch(err => {
         res.status(err);
       })
     } else {
@@ -315,18 +431,49 @@ router.post('/deleteloan/:id', function(req, res, next){
   });
 });
 
-router.post('/sellloan/:id', function(req, res, next){
-  let token = req.cookies.jwt;
+router.post('/unsellloan/:id', function (req, res, next) {
+  let token = req.headers.authorization;
   models.bankers
   authService.verifyUser(token).then(banker => {
-    if(banker) {
+    if (banker) {
       let loanId = parseInt(req.params.id);
-      models.loans.update({ForSale: true}, {
-        where: {LoanId: loanId,
-        Deleted: false}
+      models.loans.update({
+        ForSale: false
+      }, 
+      {where: {
+        LoanId: loanId,
+        Deleted: false
+      }
+    }).then(result => {
+      res.json({
+        message: "Loan is no loger for sale."
+      });
+    });
+    } else {
+      res.json({
+        message: "Loan is not for sale.",
+        status: 403
+      });
+    }
+  });
+});
+
+router.post('/sellloan/:id', function (req, res, next) {
+  let token = req.headers.authorization;
+  models.bankers
+  authService.verifyUser(token).then(banker => {
+    if (banker) {
+      let loanId = parseInt(req.params.id);
+      models.loans.update({ ForSale: true }, {
+        where: {
+          LoanId: loanId,
+          Deleted: false
+        }
       }).then(result => {
-        res.send(result)
-      }).catch(err =>{
+        res.json({
+          message: "Loan For Sale"
+        })
+      }).catch(err => {
         res.status(err);
       })
     } else {
@@ -337,7 +484,7 @@ router.post('/sellloan/:id', function(req, res, next){
 
 
 router.get('/homepage', function (req, res, next) {
-  let token = req.cookies.jwt;
+  let token = req.headers.authorization;
   authService.verifyUser(token).then(banker => {
     if (banker) {
       models.loans.findAll({
@@ -358,18 +505,20 @@ router.get('/homepage', function (req, res, next) {
   });
 });
 
-router.post('/buyloan/:id', function(req, res, next) {
-  let token = req.cookies.jwt;
+router.post('/buyloan/:id', function (req, res, next) {
+  let token = req.headers.authorization;
   models.bankers
   authService.verifyUser(token).then(banker => {
-    if(banker){
+    if (banker) {
       let bankId = banker.BankId;
       let loanId = parseInt(req.params.id);
-      models.loans.update({ BankId: bankId}, {
-        where: {LoanId: loanId},
+      models.loans.update({ BankId: bankId, ForSale: false }, {
+        where: { LoanId: loanId },
       }).then(results => {
         console.log(results);
-        res.send('Purchase Successfull');
+        res.json({
+          message: "Purchase Successfull"
+        });
       });
     } else {
       res.send('Please Log In');
