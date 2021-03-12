@@ -12,8 +12,10 @@ const associations = require('./rel/associations');
 let sequelize;
 if (config.use_env_variable) {
   sequelize = new Sequelize(process.env[config.use_env_variable], config);
+  console.log("if")
 } else {
-  sequelize = new Sequelize(config.database, config.username, config.password, config);
+  sequelize = new Sequelize(config.database, config.username, config.password, { host: config.host, dialect: config.dialect });
+  console.log("else", config.host)
 }
 
 fs
