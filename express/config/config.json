@@ -1,10 +1,9 @@
 {
   "development": {
-    "username": "Daniel",
-    "password": "Hello123",
+    "username": "root",
+    "password": "Password1!",
     "database": "AssignmentBoard",
-    "host": "rds-jericho.cbegehve7r95.us-east-1.rds.amazonaws.com",
-    "port": 3306,
+    "host": "127.0.0.1",
     "dialect": "mysql"
   },
   "test": {
